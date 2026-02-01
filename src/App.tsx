@@ -10,8 +10,7 @@ const App = () => {
   const [finalRotation, setFinalRotation] = useState(0);
   const [spinKey, setSpinKey] = useState(0);
   const [currentWheelNames, setCurrentWheelNames] = useState<string[]>([]);
-  const [wheelInitialRotation, setWheelInitialRotation] = useState(0); // 輪盤的初始偏移角度
-  const [wheelReady, setWheelReady] = useState(true); // 輪盤是否準備好可以開始下一次抽獎
+  const [waitingForNext, setWaitingForNext] = useState(false); // 是否在等待進行下一獎
   
   // 每輪的得獎者位置設定（1-based 索引）
   const winnerPositionsConfig: { [key: string]: number[] } = {
@@ -86,8 +85,6 @@ const App = () => {
     { name: '盛輝電機', prize: { name: '加碼獎', item: '禮券_新光三越，三千', count: 5 } },
     { name: '德龍電機', prize: { name: '加碼獎', item: '禮券_新光三越，三千', count: 5 } },
   ];
-  
-  const drawnCompanyNames = initialDrawnResults.map(item => item.name);
   
   // 初始名單 48 家
   const initialNames = [
@@ -224,7 +221,6 @@ const App = () => {
     
     // 計算輪盤的初始偏移角度（往順時針方向偏移 N 個位置）
     const initialOffsetAngle = offsetPositions * frozenSegmentAngle;
-    setWheelInitialRotation(initialOffsetAngle);
     
     // 計算目標旋轉角度
     // 輪盤初始在 initialOffsetAngle（如 120°）
@@ -242,7 +238,6 @@ const App = () => {
 
     setTimeout(() => {
       setIsSpinning(false);
-      setWheelReady(false); // 輪盤停止後，禁用按鈕直到下一輪準備好
       
       // 直接使用預設的中獎名單
       const finalWinners: string[] = presetWinnerNames;
@@ -250,18 +245,26 @@ const App = () => {
       // 顯示所有得獎者
       setWinner({ names: finalWinners, prize });
       
-      // 停下來後，再等 30 秒才更新名單
-      setTimeout(() => {
-        setRemainingNames((prev: string[]) => prev.filter((name: string) => !finalWinners.includes(name)));
-        const newDrawnNames = finalWinners.map((name: string) => ({ name, prize }));
-        setDrawnNames((prev: any[]) => [...prev, ...newDrawnNames]);
-        setCurrentWheelNames([]);
-        setWinner(null); // 清空中獎訊息
-        setFinalRotation(0); // 重置旋轉角度，讓下一輪重新計算偏移
-        setSpinKey(prev => prev + 1); // 重置動畫，確保下一輪從新的初始位置開始
-        setWheelReady(true); // 下一輪準備好了，啟用按鈕
-      }, 30000);
+      // 立即更新名單（輪盤停止時就更新）
+      setRemainingNames((prev: string[]) => prev.filter((name: string) => !finalWinners.includes(name)));
+      const newDrawnNames = finalWinners.map((name: string) => ({ name, prize }));
+      setDrawnNames((prev: any[]) => [...prev, ...newDrawnNames]);
+      
+      // 停下來後，設置等待進行下一獎的狀態
+      setWaitingForNext(true);
     }, 10000);
+  };
+
+  // 進行下一獎
+  const proceedToNext = () => {
+    if (!winner) return;
+    
+    // 清空中獎訊息並準備下一輪
+    setCurrentWheelNames([]);
+    setWinner(null);
+    setFinalRotation(0); // 重置旋轉角度，讓下一輪重新計算偏移
+    setSpinKey(prev => prev + 1); // 重置動畫，確保下一輪從新的初始位置開始
+    setWaitingForNext(false);
   };
 
   // 重置遊戲
@@ -277,7 +280,7 @@ const App = () => {
     setFinalRotation(0);
     setSpinKey(0);
     setActiveTab('未抽');
-    setWheelReady(true);
+    setWaitingForNext(false);
   };
 
   return (
@@ -475,11 +478,11 @@ const App = () => {
             
             <div className="text-center md:text-left">
             <button
-              onClick={spinWheel}
-              disabled={isSpinning || !wheelReady || remainingNames.length === 0 || drawnNames.length >= totalDrawCount}
+              onClick={waitingForNext ? proceedToNext : spinWheel}
+              disabled={(isSpinning || remainingNames.length === 0 || drawnNames.length >= totalDrawCount) && !waitingForNext}
               className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none w-full"
             >
-              {isSpinning ? '抽獎中...' : !wheelReady ? '準備下一輪...' : drawnNames.length >= totalDrawCount ? '已抽完所有獎項' : remainingNames.length === 0 ? '名單已空' : '開始抽獎'}
+              {isSpinning ? '抽獎中...' : waitingForNext ? '進行下一獎' : drawnNames.length >= totalDrawCount ? '已抽完所有獎項' : remainingNames.length === 0 ? '名單已空' : '開始抽獎'}
             </button>
             
             {winner && (
@@ -585,29 +588,42 @@ const App = () => {
               </div>
             ) : (
               <div>
-              <div className="grid grid-cols-4 gap-3">
-                {drawnNames.length === 0 ? (
-                  <div className="col-span-4 text-center text-gray-500 py-8">
-                    尚無抽獎結果
-                  </div>
-                ) : (
-                  drawnNames.map((item: any, index: number) => (
-                    <div 
-                      key={index} 
-                      className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center text-gray-700"
-                      style={{ fontSize: '16px' }}
-                    >
-                      <p className="font-bold text-lg">{item?.name || item}</p>
-                      {item?.prize && (
-                        <>
-                          <p className="text-xs text-red-600 mt-1">{item.prize.name}</p>
-                          <p className="text-xs text-gray-600 mt-1">{item.prize.item}</p>
-                        </>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+              {drawnNames.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  尚無抽獎結果
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {prizes.map((prize) => {
+                    const prizeWinners = drawnNames.filter((item: any) => item?.prize?.name === prize.name);
+                    if (prizeWinners.length === 0) return null;
+                    
+                    return (
+                      <div key={prize.name} className="bg-white rounded-lg p-4 shadow-sm">
+                        <div className="mb-3 pb-2 border-b border-gray-200">
+                          <h3 className="text-lg">
+                            <span className="font-bold text-red-600">{prize.name}</span>
+                            <span className="mx-2 text-gray-400">-</span>
+                            <span className="text-base text-gray-700">{prize.item}</span>
+                            <span className="ml-2 text-sm text-gray-500">(共 {prize.count} 個名額)</span>
+                          </h3>
+                        </div>
+                        <div className="grid grid-cols-4 gap-3">
+                          {prizeWinners.map((item: any, index: number) => (
+                            <div 
+                              key={index} 
+                              className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center"
+                              style={{ fontSize: '16px' }}
+                            >
+                              <p className="font-bold text-lg text-gray-700">{item?.name || item}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               </div>
             )}
           </div>
