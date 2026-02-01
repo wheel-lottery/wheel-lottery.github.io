@@ -11,6 +11,7 @@ const App = () => {
   const [spinKey, setSpinKey] = useState(0);
   const [currentWheelNames, setCurrentWheelNames] = useState<string[]>([]);
   const [waitingForNext, setWaitingForNext] = useState(false); // 是否在等待進行下一獎
+  const [currentDisplayPrize, setCurrentDisplayPrize] = useState<any>(null); // 當前顯示的獎項（用於指針位置）
   
   // 每輪的得獎者位置設定（1-based 索引）
   const winnerPositionsConfig: { [key: string]: number[] } = {
@@ -199,6 +200,9 @@ const App = () => {
     const prize = getCurrentPrize();
     if (!prize) return;
 
+    // 設置當前顯示的獎項（用於指針位置）
+    setCurrentDisplayPrize(prize);
+
     // 計算本次要抽出的人數（該獎項的全部數量）
     const drawCount = Math.min(prize.count, remainingNames.length);
     
@@ -245,8 +249,7 @@ const App = () => {
       // 顯示所有得獎者
       setWinner({ names: finalWinners, prize });
       
-      // 立即更新名單（輪盤停止時就更新）
-      setRemainingNames((prev: string[]) => prev.filter((name: string) => !finalWinners.includes(name)));
+      // 只更新 drawnNames（用於顯示結果），不更新 remainingNames
       const newDrawnNames = finalWinners.map((name: string) => ({ name, prize }));
       setDrawnNames((prev: any[]) => [...prev, ...newDrawnNames]);
       
@@ -259,12 +262,18 @@ const App = () => {
   const proceedToNext = () => {
     if (!winner) return;
     
+    const finalWinners = winner.names;
+    
+    // 現在才更新 remainingNames（移除中獎者）
+    setRemainingNames((prev: string[]) => prev.filter((name: string) => !finalWinners.includes(name)));
+    
     // 清空中獎訊息並準備下一輪
     setCurrentWheelNames([]);
     setWinner(null);
     setFinalRotation(0); // 重置旋轉角度，讓下一輪重新計算偏移
     setSpinKey(prev => prev + 1); // 重置動畫，確保下一輪從新的初始位置開始
     setWaitingForNext(false);
+    setCurrentDisplayPrize(null); // 清空當前顯示獎項，讓指針跳到下一輪
   };
 
   // 重置遊戲
@@ -281,6 +290,7 @@ const App = () => {
     setSpinKey(0);
     setActiveTab('未抽');
     setWaitingForNext(false);
+    setCurrentDisplayPrize(null);
   };
 
   return (
@@ -326,15 +336,14 @@ const App = () => {
           }}
         >
         {/* 輪盤區域 */}
-        <div className="rounded-3xl shadow-2xl flex items-center justify-center" style={{ flex: '2', minWidth: 0, height: '900px', backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
+        <div className="rounded-3xl shadow-2xl flex items-center justify-center" style={{ flex: '2', minWidth: 0, height: '900px', backgroundColor: 'rgba(255, 255, 255, 0.5)', padding: '0 4rem' }}>
           <div 
             className="flex"
             style={{
               flexDirection: window.innerWidth >= 768 ? 'row' : 'column',
               justifyContent: window.innerWidth >= 768 ? 'center' : 'flex-start',
               alignItems: window.innerWidth >= 768 ? 'center' : 'flex-start',
-              gap: window.innerWidth >= 768 ? '70px' : '32px',
-              margin: '0 4rem'
+              gap: window.innerWidth >= 768 ? '70px' : '32px'
             }}
           >
             {/* 左側：輪盤 */}
@@ -347,8 +356,9 @@ const App = () => {
                 }}
               >
                 {/* 指針 - 根據預設位置分散 */}
-                {currentPrize && (() => {
-                  const positions = winnerPositionsConfig[currentPrize.name] || [];
+                {(currentDisplayPrize || currentPrize) && (() => {
+                  const displayPrize = currentDisplayPrize || currentPrize;
+                  const positions = winnerPositionsConfig[displayPrize.name] || [];
                   const totalNames = currentWheelNames.length > 0 ? currentWheelNames.length : remainingNames.length;
                   const anglePerSegment = 360 / totalNames;
                   
@@ -464,12 +474,11 @@ const App = () => {
           <div 
             className="flex-1"
             style={{
-              marginTop: window.innerWidth >= 768 ? '0' : '16px',
-              maxWidth: window.innerWidth >= 768 ? '500px' : 'none'
+              marginTop: window.innerWidth >= 768 ? '0' : '16px'
             }}
           >
             {currentPrize && (
-              <div className="mb-4 p-4 bg-white rounded-xl text-center md:text-left shadow-md">
+              <div className="mb-4 p-4 bg-white rounded-xl text-center md:text-left shadow-md" style={{ width: '100%', minWidth: '400px' }}>
                 <p className="text-xl font-bold text-gray-800">目前抽取：{currentPrize.name}</p>
                 <p className="text-2xl text-gray-700 mt-2">{currentPrize.item}</p>
                 <p className="text-base text-gray-600 mt-2">共 {currentPrize.count} 個名額</p>
