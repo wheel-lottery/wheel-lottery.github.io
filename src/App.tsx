@@ -294,7 +294,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ padding: '0 40px 40px 40px', backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+    <div className="h-screen overflow-hidden flex flex-col" style={{ padding: '0 40px 2rem 40px', backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
       <style>{`
         @keyframes spin-wheel {
           0% {
@@ -311,7 +311,7 @@ const App = () => {
         }
       `}</style>
       
-      <div>
+      <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
         <div className="flex items-center justify-between" style={{ height: '120px' }}>
           <img src={logoSvg} alt="Logo" style={{ height: '80px', width: 'auto' }} />
           <div className="flex items-center gap-4">
@@ -330,13 +330,14 @@ const App = () => {
         </div>
 
         <div 
-          className="flex gap-4"
+          className="flex gap-4 flex-1"
           style={{
-            flexDirection: window.innerWidth >= 768 ? 'row' : 'column'
+            flexDirection: window.innerWidth >= 768 ? 'row' : 'column',
+            minHeight: 0
           }}
         >
         {/* 輪盤區域 */}
-        <div className="rounded-3xl shadow-2xl flex items-center justify-center" style={{ flex: '2', minWidth: 0, height: '900px', backgroundColor: 'rgba(255, 255, 255, 0.5)', padding: '0 4rem' }}>
+        <div className="rounded-3xl shadow-2xl flex items-center justify-center" style={{ flex: '2', minWidth: 0, backgroundColor: 'rgba(255, 255, 255, 0.5)', padding: '0 4rem' }}>
           <div 
             className="flex"
             style={{
@@ -531,12 +532,11 @@ const App = () => {
 
         {/* Tabs 區域 */}
         <div 
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
           style={{
             marginTop: window.innerWidth >= 768 ? '0' : '16px',
             minWidth: window.innerWidth >= 768 ? '400px' : 'auto',
-            flex: '1',
-            height: '900px'
+            flex: '1'
           }}
         >
           <div className="flex border-b">
@@ -564,23 +564,23 @@ const App = () => {
             </button>
           </div>
 
-          <div style={{ padding: '0.5rem !important', height: 'calc(900px - 60px)', overflow: 'auto' }}>
+          <div className="flex-1" style={{ padding: '0.5rem !important', overflow: 'auto', minHeight: 0 }}>
             {activeTab === '未抽' ? (
               <div className="grid grid-cols-2" style={{ gap: '0.5rem !important' }}>
                 {/* 第一欄：1-24 */}
                 <div>
-                  <table className="w-full" style={{ fontSize: '16px' }}>
+                  <table className="w-full" style={{ fontSize: '14px' }}>
                     <thead className="bg-blue-100 sticky top-0">
                       <tr>
-                        <th className="px-2 py-1 text-left text-blue-700">編號</th>
-                        <th className="px-2 py-1 text-left text-blue-700">姓名</th>
+                        <th className="px-2 text-left text-blue-700" style={{ padding: '5px 0.5rem' }}>編號</th>
+                        <th className="px-2 text-left text-blue-700" style={{ padding: '5px 0.5rem' }}>姓名</th>
                       </tr>
                     </thead>
                     <tbody>
                       {remainingNames.slice(0, 24).map((name: string, index: number) => (
                         <tr key={index} className={`border-b border-blue-100 hover:bg-blue-50 ${index % 2 === 1 ? 'bg-blue-25' : ''}`} style={index % 2 === 1 ? { backgroundColor: '#f0f7ff' } : {}}>
-                          <td className="px-2 py-1 text-gray-600">{index + 1}</td>
-                          <td className="px-2 py-1 text-gray-700 font-medium">{name}</td>
+                          <td className="px-2 text-gray-600" style={{ padding: '5px 0.5rem' }}>{index + 1}</td>
+                          <td className="px-2 text-gray-700 font-medium" style={{ padding: '5px 0.5rem' }}>{name}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -589,18 +589,18 @@ const App = () => {
                 
                 {/* 第二欄：25-48 */}
                 <div>
-                  <table className="w-full" style={{ fontSize: '16px' }}>
+                  <table className="w-full" style={{ fontSize: '14px' }}>
                     <thead className="bg-blue-100 sticky top-0">
                       <tr>
-                        <th className="px-2 py-1 text-left text-blue-700">編號</th>
-                        <th className="px-2 py-1 text-left text-blue-700">姓名</th>
+                        <th className="px-2 text-left text-blue-700" style={{ padding: '5px 0.5rem' }}>編號</th>
+                        <th className="px-2 text-left text-blue-700" style={{ padding: '5px 0.5rem' }}>姓名</th>
                       </tr>
                     </thead>
                     <tbody>
                       {remainingNames.slice(24, 48).map((name: string, index: number) => (
                         <tr key={index} className={`border-b border-blue-100 hover:bg-blue-50 ${index % 2 === 1 ? 'bg-blue-25' : ''}`} style={index % 2 === 1 ? { backgroundColor: '#f0f7ff' } : {}}>
-                          <td className="px-2 py-1 text-gray-600">{index + 25}</td>
-                          <td className="px-2 py-1 text-gray-700 font-medium">{name}</td>
+                          <td className="px-2 text-gray-600" style={{ padding: '5px 0.5rem' }}>{index + 25}</td>
+                          <td className="px-2 text-gray-700 font-medium" style={{ padding: '5px 0.5rem' }}>{name}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -614,27 +614,38 @@ const App = () => {
                   尚無抽獎結果
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div>
                   {prizes.map((prize) => {
                     const prizeWinners = drawnNames.filter((item: any) => item?.prize?.name === prize.name);
                     if (prizeWinners.length === 0) return null;
                     
+                    // 根據獎項定義不同的顏色
+                    const prizeColors: { [key: string]: { bg: string; border: string } } = {
+                      '優等獎': { bg: '#dbeafe', border: '#93c5fd' },
+                      '貳獎': { bg: '#e9d5ff', border: '#c084fc' },
+                      '壹獎': { bg: '#fed7aa', border: '#fb923c' },
+                      '特等獎': { bg: '#fecaca', border: '#f87171' },
+                      '頭獎': { bg: '#fef08a', border: '#facc15' },
+                      '加碼獎': { bg: '#d1fae5', border: '#6ee7b7' }
+                    };
+                    const colors = prizeColors[prize.name] || { bg: '#f0f9ff', border: '#bae6fd' };
+                    
                     return (
-                      <div key={prize.name} className="bg-white rounded-lg p-4 shadow-sm">
-                        <div className="mb-3 pb-2 border-b border-gray-200">
+                      <div key={prize.name} className="bg-white rounded-lg p-2 shadow-sm">
+                        <div className="mb-2 pb-2 border-b border-gray-200">
                           <h3 className="text-lg">
                             <span className="font-bold text-red-600">{prize.name}</span>
                             <span className="mx-2 text-gray-400">-</span>
-                            <span className="text-base text-gray-700">{prize.item}</span>
-                            <span className="ml-2 text-sm text-gray-500">(共 {prize.count} 個名額)</span>
+                            <span className="text-base text-gray-900">{prize.item}</span>
+                            <span className="ml-2 text-sm text-gray-500">共 {prize.count} 個</span>
                           </h3>
                         </div>
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-4 gap-2">
                           {prizeWinners.map((item: any, index: number) => (
                             <div 
                               key={index} 
-                              className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center"
-                              style={{ fontSize: '16px' }}
+                              className="border rounded-lg px-3 py-2 text-center"
+                              style={{ fontSize: '16px', backgroundColor: colors.bg, borderColor: colors.border }}
                             >
                               <p className="font-bold text-lg text-gray-700">{item?.name || item}</p>
                             </div>
